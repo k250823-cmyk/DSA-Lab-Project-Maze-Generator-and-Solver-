@@ -8,7 +8,7 @@
 //cells sit on the odd rows and columns, the tiles between two cells are the walls that dfs removes
 //every open tile is a vertex of a graph and its open neighbours are connected to it
 
-//has function to generate the maze, to solve will be added later
+//added function to solve maze
 class Maze{
 	public:
 	    int n;                          //cells per side
@@ -31,6 +31,7 @@ class Maze{
 	                onPath[r][c] = false;
 	            }
 	        }
+	
 	        bool vis[MAXN][MAXN];
 	        for (int r=0; r<n; r++) {
 	            for (int c=0; c<n; c++) {
@@ -57,13 +58,13 @@ class Maze{
 	            for (int d=0; d<4; d++) {
 	                int nr = r + dr[d];
 	                int nc = c + dc[d];
-	                if (nr >= 0 && nr < n && nc >= 0 && nc < n && !vis[nr][nc]){
+	                if (nr >= 0 && nr < n && nc >= 0 && nc < n && !vis[nr][nc]) {
 	                    options[count] = d;
 	                    count++;
 	                }
 	            }
 	
-	            if (count > 0){
+	            if (count > 0) {
 	                //carve a passage to a random unvisited neighbour
 	                //rand() % count picks one of the available directions at random
 	                int d = options[rand() % count];
@@ -84,7 +85,67 @@ class Maze{
 	        startC = 1;
 	        exitR = size - 2;
 	        exitC = size - 2;
-	        //the bfs solve() step is added in the next part
+	        solve();
+	    }
+	
+	    //bfs using our queue, finds the shortest path from the start to the exit and marks it
+	    void solve() {
+	        for (int i=0; i<MAXTILES; i++) {
+	            parent[i] = -1;
+	        }
+	        for (int r=0; r<size; r++) {
+	            for (int c=0; c<size; c++) {
+	                onPath[r][c] = false;
+	            }
+	        }
+	
+	        int startCode = startR * MAXT + startC;
+	        int exitCode = exitR * MAXT + exitC;
+	
+	        Queue q;
+	        parent[startCode] = startCode;
+	        q.enqueue(startCode);
+	
+	        while (!q.isEmpty()) {
+	            int cur = q.dequeue();
+	            if (cur == exitCode) {
+	                break;
+	            }
+	            int r = cur / MAXT;
+	            int c = cur % MAXT;
+	            for (int d=0; d<4; d++) {
+	                int nr = r + dr[d];
+	                int nc = c + dc[d];
+	                if (tile[nr][nc] == 0 && parent[nr * MAXT + nc] == -1) {
+	                    parent[nr * MAXT + nc] = cur;
+	                    q.enqueue(nr * MAXT + nc);
+	                }
+	            }
+	        }
+	
+	        //walk back from the exit to the start and mark the tiles
+	        shortestLen = 0;
+	        int cur = exitCode;
+	        while (cur != startCode) {
+	            onPath[cur / MAXT][cur % MAXT] = true;
+	            cur = parent[cur];
+	            shortestLen++;
+	        }
+	        onPath[startR][startC] = true;
+	    }
+	
+	    //fills a stack with the shortest path, the start tile ends up on top
+	    void buildPath(Stack &s) {
+	        s.clear();
+	        int startCode = startR * MAXT + startC;
+	        int cur = exitR * MAXT + exitC;
+	        while (true) {
+	            s.push(cur);
+	            if (cur == startCode) {
+	                break;
+	            }
+	            cur = parent[cur];
+	        }
 	    }
 };
 
